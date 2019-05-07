@@ -1,0 +1,141 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "employeeId": {
+            "required": true,
+            "type": "string"
+        },
+        "requestBody": {
+            "additionalProperties": false,
+            "description": "The employee earning model",
+            "properties": {
+                "agency": {
+                    "description": "Third-party agency associated with earning. Must match Company setup.<br  />Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "amount": {
+                    "description": "Value that matches CalculationCode to add to gross wages. For percentage (%), enter whole number (10 = 10%).  <br  />Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "annualMaximum": {
+                    "description": "Year to Date dollar amount not to be exceeded for an earning in the calendar year. Used only with company driven maximums. <br  />Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "calculationCode": {
+                    "description": "Defines how earnings are calculated. Common values are *% (percentage of gross), flat (flat dollar amount)*. Defaulted to the Company setup calcCode for earning. <br  />Max length: 20",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter1": {
+                    "description": "Cost Center associated with earning. Must match Company setup.<br  /> Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter2": {
+                    "description": "Cost Center associated with earning. Must match Company setup.<br  /> Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter3": {
+                    "description": "Cost Center associated with earning. Must match Company setup.<br  /> Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "earningCode": {
+                    "description": "Earning code. Must match Company setup. <br  />Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "effectiveDate": {
+                    "description": "Date earning is active. Defaulted to run date or check date based on Company setup. Common formats are MM-DD-CCYY, CCYY-MM-DD.",
+                    "format": "paylocity-date",
+                    "type": "string",
+                    "nullable": true
+                },
+                "endDate": {
+                    "description": "Stop date of an earning. Common formats are MM-DD-CCYY, CCYY-MM-DD.",
+                    "format": "paylocity-date",
+                    "type": "string",
+                    "nullable": true
+                },
+                "frequency": {
+                    "description": "Needed if earning is applied differently from the payroll frequency (one time earning for example).<br  /> Max length: 5",
+                    "type": "string",
+                    "nullable": true
+                },
+                "goal": {
+                    "description": "Dollar amount. The employee earning will stop when the goal amount is reached.<br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "hoursOrUnits": {
+                    "description": "The value is used in conjunction with the Rate field. When entering Group Term Life Insurance (GTL), it should contain the full amount of the group term life insurance policy. <br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "isSelfInsured": {
+                    "description": "Used for ACA. If not entered, defaulted to Company earning setup.",
+                    "type": "boolean",
+                    "nullable": true
+                },
+                "jobCode": {
+                    "description": "Job code associated with earnings. Must match Company setup.<br  /> Max length: 20",
+                    "type": "string",
+                    "nullable": true
+                },
+                "miscellaneousInfo": {
+                    "description": "Information to print on the check stub if agency is set up for this earning. <br  />Max length: 50",
+                    "type": "string",
+                    "nullable": true
+                },
+                "paidTowardsGoal": {
+                    "description": "Amount already paid to employee toward goal. <br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "payPeriodMaximum": {
+                    "description": "Maximum amount of the earning on a single paycheck. <br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "payPeriodMinimum": {
+                    "description": "Minimum amount of the earning on a single paycheck. <br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "rate": {
+                    "description": "Rate is used in conjunction with the hoursOrUnits field. <br  /> Decimal(12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "rateCode": {
+                    "description": "Rate Code applies to additional pay rates entered for an employee. Must match Company setup. <br  /> Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "startDate": {
+                    "description": "Start date of an earning based on payroll calendar. Common formats are MM-DD-CCYY, CCYY-MM-DD.",
+                    "format": "paylocity-date",
+                    "type": "string",
+                    "nullable": true
+                }
+            },
+            "required": [
+                "earningCode",
+                "startDate"
+            ],
+            "type": "object"
+        }
+    }
+}

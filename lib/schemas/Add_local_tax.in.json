@@ -1,0 +1,54 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "employeeId": {
+            "required": true,
+            "type": "string"
+        },
+        "requestBody": {
+            "additionalProperties": false,
+            "description": "The Local Tax model",
+            "properties": {
+                "exemptions": {
+                    "description": "Local tax exemptions value.<br  />Decimal (12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "exemptions2": {
+                    "description": "Local tax exemptions 2 value.<br  />Decimal (12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "filingStatus": {
+                    "description": "Employee local tax filing status. Must match specific local tax setup. <br  /> Max length: 50",
+                    "type": "string",
+                    "nullable": true
+                },
+                "residentPSD": {
+                    "description": "Resident PSD (political subdivision code) applicable in PA. Must match Company setup.<br  /> Max length: 9",
+                    "type": "string",
+                    "nullable": true
+                },
+                "taxCode": {
+                    "description": "Local tax code.<br  />Max length: 50",
+                    "type": "string",
+                    "nullable": true
+                },
+                "workPSD": {
+                    "description": "Work location PSD. Must match Company setup. <br  /> Max length: 9",
+                    "type": "string",
+                    "nullable": true
+                }
+            },
+            "type": "object"
+        }
+    }
+}

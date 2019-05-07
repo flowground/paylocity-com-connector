@@ -1,0 +1,64 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "employeeId": {
+            "required": true,
+            "type": "string"
+        },
+        "requestBody": {
+            "additionalProperties": false,
+            "description": "The State Tax model",
+            "properties": {
+                "amount": {
+                    "description": "State tax code.<br  /> Max length: 50",
+                    "type": "number",
+                    "nullable": true
+                },
+                "exemptions": {
+                    "description": "State tax exemptions value.<br  />Decimal (12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "exemptions2": {
+                    "description": "State tax exemptions 2 value.<br  />Decimal (12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "filingStatus": {
+                    "description": "Employee state tax filing status. Common values are *S* (Single), *M* (Married).<br  />Max length: 50",
+                    "type": "string",
+                    "nullable": true
+                },
+                "percentage": {
+                    "description": "State Tax percentage. <br  />Decimal (12,2)",
+                    "type": "number",
+                    "nullable": true
+                },
+                "specialCheckCalc": {
+                    "description": "Supplemental check calculation code. Common values are *Blocked* (Taxes blocked on Supplemental checks), *Supp* (Use supplemental Tax Rate-Code). <br  />Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "taxCalculationCode": {
+                    "description": "Tax calculation code. Common values are *F* (Flat), *P* (Percentage), *FDFP* (Flat Dollar Amount plus Fixed Percentage). <br  />Max length: 10",
+                    "type": "string",
+                    "nullable": true
+                },
+                "taxCode": {
+                    "description": "State tax code.<br  /> Max length: 50",
+                    "type": "string",
+                    "nullable": true
+                }
+            },
+            "type": "object"
+        }
+    }
+}

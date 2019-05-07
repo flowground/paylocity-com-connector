@@ -1,0 +1,424 @@
+{
+    "title": "Paylocity",
+    "description": "For general questions and support of the API, contact: webservices@paylocity.com\n# Overview\n\nPaylocity Web Services API is an externally facing RESTful Internet protocol. The Paylocity API uses HTTP verbs and a RESTful endpoint structure. OAuth 2.0 is used as the API Authorization framework. Request and response payloads are formatted as JSON.\nPaylocity supports v1 and v2 versions of its API endpoints. v1, while supported, won't be enhanced with additional functionality. For direct link to v1 documentation, please click [here](https://docs.paylocity.com/weblink/guides/Paylocity_Web_Services_API/v1/Paylocity_Web_Services_API.htm). For additional resources regarding v1/v2 differences and conversion path, please contact webservices@paylocity.com.\n\n##### Setup\n\nPaylocity will provide the secure client credentials and set up the scope (type of requests and allowed company numbers). You will receive the unique client id, secret, and Paylocity public key for the data encryption. The secret will expire in 365 days. \n* Paylocity will send you an e-mail 10 days prior to the expiration date for the current secret. If not renewed, the second e-mail notification will be sent 5 days prior to secret's expiration. Each email will contain the code necessary to renew the client secret. \n* You can obtain the new secret by calling API endpoint using your current not yet expired credentials and the code that was sent with the notification email. For details on API endpoint, please see Client Credentials section. \n* Both the current secret value and the new secret value will be recognized during the transition period. After the current secret expires, you must use the new secret. \n* If you were unable to renew the secret via API endpoint, you can still contact Service and they will email you new secret via secure email.\n\n\nWhen validating the request, Paylocity API will honor the defaults and required fields set up for the company default New Hire Template as defined in Web Pay.\n\n\n# Authorization\n\nPaylocity Web Services API uses OAuth2.0 Authentication with JSON Message Format.\n\n\nAll requests of the Paylocity Web Services API require a bearer token which can be obtained by authenticating the client with the Paylocity Web Services API via OAuth 2.0.\n\n\nThe client must request a bearer token from the authorization endpoint:\n\n\nauth-server for production: https://api.paylocity.com/IdentityServer/connect/token\n\n\nauth-server for testing: https://apisandbox.paylocity.com/IdentityServer/connect/token\n\n##### Authorization Header\n\nThe request is expected to be in the form of a basic authentication request, with the \"Authorization\" header containing the client-id and client-secret. This means the standard base-64 encoded user:password, prefixed with \"Basic\" as the value for the Authorization header, where user is the client-id and password is the client-secret.\n\n##### Content-Type Header\n\nThe \"Content-Type\" header is required to be \"application/x-www-form-urlencoded\".\n\n##### Additional Values\n\nThe request must post the following form encoded values within the request body:\n\n    grant_type = client_credentials\n    scope = WebLinkAPI\n\n##### Responses\n\nSuccess will return HTTP 200 OK with JSON content:\n\n    {\n      \"access_token\": \"xxx\",\n      \"expires_in\": 3600,\n      \"token_type\": \"Bearer\"\n    }\n\n# Encryption\n\nPaylocity uses a combination of RSA and AES cryptography. As part of the setup, each client is issued a public RSA key.\n\nPaylocity recommends the encryption of the incoming requests as additional protection of the sensitive data. Clients can opt-out of the encryption during the initial setup process. Opt-out will allow Paylocity to process unencrypted requests.\n\nThe Paylocity Public Key has the following properties:\n\n* 2048 bit key size\n\n* PKCS1 key format\n\n* PEM encoding\n\n##### Properties\n\n* key (base 64 encoded): The AES symmetric key encrypted with the Paylocity Public Key. It is the key used to encrypt the content. Paylocity will decrypt the AES key using RSA decryption and use it to decrypt the content.\n\n* iv (base 64 encoded): The AES IV (Initialization Vector) used when encrypting the content.\n\n* content (base 64 encoded): The AES encrypted request. The key and iv provided in the secureContent request are used by Paylocity for decryption of the content.\n\nWe suggest using the following for the AES:\n\n* CBC cipher mode\n\n* PKCS7 padding\n\n* 128 bit block size\n\n* 256 bit key size\n\n##### Encryption Flow\n\n* Generate the unencrypted JSON payload to POST/PUT\n* Encrypt this JSON payload using your _own key and IV_ (NOT with the Paylocity public key)\n* RSA encrypt the _key_ you used in step 2 with the Paylocity Public Key, then, base64 encode the result\n* Base64 encode the IV used to encrypt the JSON payload in step 2\n* Put together a \"securecontent\" JSON object:\n \n{\n  'secureContent' : {\n    'key' : -- RSA-encrypted & base64 encoded key from step 3,\n    'iv' : -- base64 encoded iv from step 4\n    'content' -- content encrypted with your own key from step 2, base64 encoded\n  }\n}\n\n##### Sample Example\n\n    {\n      \"secureContent\": {\n        \"key\": \"eS3aw6H/qzHMJ00gSi6gQ3xa08DPMazk8BFY96Pd99ODA==\",\n        \"iv\": \"NLyXMGq9svw0XO5aI9BzWw==\",\n        \"content\": \"gAEOiQltO1w+LzGUoIK8FiYbU42hug94EasSl7N+Q1w=\"\n      }\n    }\n\n##### Sample C# Code\n\n    using Newtonsoft.Json;\n    using System;\n    using System.IO;\n    using System.Security.Cryptography;\n    using System.Text;\n\n    public class SecuredContent\n    {\n      [JsonProperty(\"key\")]\n      public string Key { get; set; }\n\n      [JsonProperty(\"iv\")]\n      public string Iv { get; set; }\n\n      [JsonProperty(\"content\")]\n      public string Content { get; set; }\n\n    }\n\n    public class EndUserSecureRequestExample\n    {\n      public string CreateSecuredRequest(FileInfo paylocityPublicKey, string unsecuredJsonRequest)\n      {\n        string publicKeyXml = File.ReadAllText(paylocityPublicKey.FullName, Encoding.UTF8);\n\n        SecuredContent secureContent = this.CreateSecuredContent(publicKeyXml, unsecuredJsonRequest);\n\n        string secureRequest = JsonConvert.SerializeObject(new { secureContent });\n\n        return secureRequest;\n      }\n\n      private SecuredContent CreateSecuredContent(string publicKeyXml, string request)\n      {\n        using (AesCryptoServiceProvider aesCsp = new AesCryptoServiceProvider())\n        {\n          aesCsp.Mode = CipherMode.CBC;\n          aesCsp.Padding = PaddingMode.PKCS7;\n          aesCsp.BlockSize = 128;\n          aesCsp.KeySize = 256;\n\n          using (ICryptoTransform crt = aesCsp.CreateEncryptor(aesCsp.Key, aesCsp.IV))\n          {\n            using (MemoryStream outputStream = new MemoryStream())\n            {\n              using (CryptoStream encryptStream = new CryptoStream(outputStream, crt, CryptoStreamMode.Write))\n              {\n                byte[] encodedRequest = Encoding.UTF8.GetBytes(request);\n                encryptStream.Write(encodedRequest, 0, encodedRequest.Length);\n                encryptStream.FlushFinalBlock();\n                byte[] encryptedRequest = outputStream.ToArray();\n\n                using (RSACryptoServiceProvider crp = new RSACryptoServiceProvider())\n                {\n                  crp.FromXmlstring(publicKeyXml);\n                  byte[] encryptedKey = crp.Encrypt(aesCsp.Key, false);\n\n                  return new SecuredContent()\n                  {\n                    Key = Convert.ToBase64string(encryptedKey),\n                    Iv = Convert.ToBase64string(aesCsp.IV),\n                    Content = Convert.ToBase64string(encryptedRequest)\n                  };\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n\n## Support\n\nQuestions about using the Paylocity API? Please contact webservices@paylocity.com.\n\n# Deductions (v1)\n\nDeductions API provides endpoints to retrieve, add, update and delete deductions for a company's employees. For schema details, click <a href=\"https://docs.paylocity.com/weblink/guides/Paylocity_Web_Services_API/v1/Paylocity_Web_Services_API.htm\" target=\"_blank\">here</a>.\n\n# OnBoarding (v1)\n\nOnboarding API sends employee data into Paylocity Onboarding to help ensure an easy and accurate hiring process for subsequent completion into Web Pay. For schema details, click <a href=\"https://docs.paylocity.com/weblink/guides/Paylocity_Web_Services_API/v1/Paylocity_Web_Services_API.htm\" target=\"_blank\">here</a>.",
+    "docsUrl": "",
+    "url": "https://api.apis.guru/v2/specs/paylocity.com/2/swagger.json",
+    "envVars": {
+        "OAUTH_CLIENT_ID": {
+            "description": "OAuth Client ID"
+        },
+        "OAUTH_CLIENT_SECRET": {
+            "description": "OAuth Client Secret"
+        }
+    },
+    "credentials": {
+        "fields": {
+            "server": {
+                "label": "Server",
+                "viewClass": "SelectView",
+                "model": [
+                    "https://api.paylocity.com/api",
+                    "--- Custom URL"
+                ],
+                "required": true
+            },
+            "otherServer": {
+                "label": "Custom Server URL",
+                "viewClass": "TextFieldView"
+            },
+            "paylocity_auth": {
+                "label": "paylocity_auth",
+                "viewClass": "OAuthFieldView"
+            }
+        },
+        "oauth2": {
+            "client_id": "{{OAUTH_CLIENT_ID}}",
+            "client_secret": "{{OAUTH_CLIENT_SECRET}}",
+            "token_uri": "https://api.paylocity.com/IdentityServer/connect/token"
+        }
+    },
+    "triggers": {
+        "startFlow": {
+            "main": "./lib/triggers/startFlow.js",
+            "type": "polling",
+            "title": "Start Flow",
+            "fields": {}
+        }
+    },
+    "actions": {
+        "Get_All_Company_Codes_and_Descriptions_by_Resource": {
+            "main": "./lib/actions/Get_All_Company_Codes_and_Descriptions_by_Resource.js",
+            "title": "Get All Company Codes",
+            "description": "Get All Company Codes for the selected company and resource",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_All_Company_Codes_and_Descriptions_by_Resource.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_All_Custom_Fields_by_category": {
+            "main": "./lib/actions/Get_All_Custom_Fields_by_category.js",
+            "title": "Get All Custom Fields",
+            "description": "Get All Custom Fields for the selected company",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_All_Custom_Fields_by_category.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_employee": {
+            "main": "./lib/actions/Add_employee.js",
+            "title": "Add new employee",
+            "description": "New Employee API sends new employee data directly to Web Pay. Companies who use the New Hire Template in Web Pay may require additional fields when hiring employees. New Employee API Requests will honor these required fields.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_employee.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_all_employees": {
+            "main": "./lib/actions/Get_all_employees.js",
+            "title": "Get all employees",
+            "description": "Get All Employees API will return employee data currently available in Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_all_employees.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_employee": {
+            "main": "./lib/actions/Get_employee.js",
+            "title": "Get employee",
+            "description": "Get Employee API will return employee data currently available in Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_employee.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Update_employee": {
+            "main": "./lib/actions/Update_employee.js",
+            "title": "Update employee",
+            "description": "Update Employee API will update existing employee data in WebPay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Update_employee.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_or_update_additional_rates": {
+            "main": "./lib/actions/Add_or_update_additional_rates.js",
+            "title": "Add/update additional rates",
+            "description": "Sends new or updated employee additional rates information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_or_update_additional_rates.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Update_or_add_employee_benefit_setup": {
+            "main": "./lib/actions/Update_or_add_employee_benefit_setup.js",
+            "title": "Add/update employee's benefit setup",
+            "description": "Sends new or updated employee benefit setup information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Update_or_add_employee_benefit_setup.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_All_Earnings": {
+            "main": "./lib/actions/Get_All_Earnings.js",
+            "title": "Get All Earnings",
+            "description": "Get All Earnings returns all earnings for the selected employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_All_Earnings.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_or_update_an_employee_earning": {
+            "main": "./lib/actions/Add_or_update_an_employee_earning.js",
+            "title": "Add/Update Earning",
+            "description": "Add/Update Earning API sends new or updated employee earnings information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_or_update_an_employee_earning.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_Earnings_by_Earning_Code": {
+            "main": "./lib/actions/Get_Earnings_by_Earning_Code.js",
+            "title": "Get Earnings by Earning Code",
+            "description": "Get Earnings returns all earnings with the provided earning code for the selected employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_Earnings_by_Earning_Code.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Delete_Earning_by_Earning_Code_and_Start_Date": {
+            "main": "./lib/actions/Delete_Earning_by_Earning_Code_and_Start_Date.js",
+            "title": "Delete Earning by Earning Code and Start Date",
+            "description": "Delete Earning by Earning Code and Start Date",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Delete_Earning_by_Earning_Code_and_Start_Date.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_Earning_by_Earning_Code_and_Start_Date": {
+            "main": "./lib/actions/Get_Earning_by_Earning_Code_and_Start_Date.js",
+            "title": "Get Earning by Earning Code and Start Date",
+            "description": "Get Earnings returns the single earning with the provided earning code and start date for the selected employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_Earning_by_Earning_Code_and_Start_Date.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_all_local_taxes": {
+            "main": "./lib/actions/Get_all_local_taxes.js",
+            "title": "Get all local taxes",
+            "description": "Returns all local taxes for the selected employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_all_local_taxes.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_local_tax": {
+            "main": "./lib/actions/Add_local_tax.js",
+            "title": "Add new local tax",
+            "description": "Sends new employee local tax information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_local_tax.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Delete_local_tax_by_tax_code": {
+            "main": "./lib/actions/Delete_local_tax_by_tax_code.js",
+            "title": "Delete local tax by tax code",
+            "description": "Delete local tax by tax code",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Delete_local_tax_by_tax_code.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_local_tax_by_tax_code": {
+            "main": "./lib/actions/Get_local_tax_by_tax_code.js",
+            "title": "Get local taxes by tax code",
+            "description": "Returns all local taxes with the provided tax code for the selected employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_local_tax_by_tax_code.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_or_update_non_primary_state_tax": {
+            "main": "./lib/actions/Add_or_update_non_primary_state_tax.js",
+            "title": "Add/update non-primary state tax",
+            "description": "Sends new or updated employee non-primary state tax information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_or_update_non_primary_state_tax.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_or_update_primary_state_tax": {
+            "main": "./lib/actions/Add_or_update_primary_state_tax.js",
+            "title": "Add/update primary state tax",
+            "description": "Sends new or updated employee primary state tax information directly to Web Pay.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_or_update_primary_state_tax.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Get_company_specific_Open_API_documentation": {
+            "main": "./lib/actions/Get_company_specific_Open_API_documentation.js",
+            "title": "Get Company-Specific Open API Documentation",
+            "description": "The company-specific Open API endpoint allows the client to GET an Open API document for the Paylocity API that is customized with company-specific resource schemas. These customized resource schemas define certain properties as enumerations of pre-defined values that correspond to the company's setup with Web Pay. The customized schemas also indicate which properties are required by the company within Web Pay.<br  />To learn more about Open API, click [here](https://www.openapis.org/)",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Get_company_specific_Open_API_documentation.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_Client_Secret": {
+            "main": "./lib/actions/Add_Client_Secret.js",
+            "title": "Obtain new client secret.",
+            "description": "Obtain new client secret for Paylocity-issued client id. See Setup section for details.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_Client_Secret.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        },
+        "Add_new_employee_to_Web_Link": {
+            "main": "./lib/actions/Add_new_employee_to_Web_Link.js",
+            "title": "Add new employee to Web Link",
+            "description": "Add new employee to Web Link will send partially completed or potentially erroneous new hire record to Web Link, where it can be corrected and competed by company administrator or authorized Paylocity Service Bureau employee.",
+            "fields": {
+                "verbose": {
+                    "viewClass": "CheckBoxView",
+                    "label": "Debug this step (log more data)"
+                }
+            },
+            "metadata": {
+                "in": "./lib/schemas/Add_new_employee_to_Web_Link.in.json",
+                "out": {
+                    "type": "object"
+                }
+            }
+        }
+    }
+}

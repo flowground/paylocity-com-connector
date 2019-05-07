@@ -1,0 +1,25 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "pagesize": {
+            "required": false,
+            "type": "integer"
+        },
+        "pagenumber": {
+            "required": false,
+            "type": "integer"
+        },
+        "includetotalcount": {
+            "required": false,
+            "type": "boolean"
+        }
+    }
+}

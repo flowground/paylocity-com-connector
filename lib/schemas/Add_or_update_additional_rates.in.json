@@ -1,0 +1,86 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "employeeId": {
+            "required": true,
+            "type": "string"
+        },
+        "requestBody": {
+            "additionalProperties": false,
+            "description": "The additional pay rate model",
+            "properties": {
+                "changeReason": {
+                    "description": "Not required. If populated, must match one of the system coded values available in the Additional Rates Change Reason drop down.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter1": {
+                    "description": "Not required. Valid values must match one of the system coded cost centers available in the Additional Rates Cost Center level 1 drop down. This cell must be in a text format.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter2": {
+                    "description": "Not required. Valid values must match one of the system coded cost centers available in the Additional Rates Cost Center level 2 drop down. This cell must be in a text format.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "costCenter3": {
+                    "description": "Not required. Valid values must match one of the system coded cost centers available in the Additional Rates Cost Center level 3 drop down. This cell must be in a text format.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "effectiveDate": {
+                    "description": "Required. Common formats include *MM-DD-CCYY*, *CCYY-MM-DD*.<br />",
+                    "format": "paylocity-date",
+                    "type": "string",
+                    "nullable": true
+                },
+                "endCheckDate": {
+                    "description": "Not required. Must match one of the system coded check dates available in the Additional Rates End Check Date drop down. Common formats include *MM-DD-CCYY*, *CCYY-MM-DD*.<br />",
+                    "format": "paylocity-date",
+                    "type": "string",
+                    "nullable": true
+                },
+                "job": {
+                    "description": "Not required. If populated, must match one of the system coded values available in the Additional Rates Job drop down.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "rate": {
+                    "description": "Required. Enter dollar amount that corresponds to the Per selection.<br />",
+                    "type": "number",
+                    "nullable": true
+                },
+                "rateCode": {
+                    "description": "Required. If populated, must match one of the system coded values available in the Additional Rates Rate Code drop down.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "rateNotes": {
+                    "description": "Not required.<br  />Max length: 4000<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "ratePer": {
+                    "description": "Required. Valid values are HOUR or WEEK.<br />",
+                    "type": "string",
+                    "nullable": true
+                },
+                "shift": {
+                    "description": "Not required. If populated, must match one of the system coded values available in the Additional Rates Shift drop down.<br />",
+                    "type": "string",
+                    "nullable": true
+                }
+            },
+            "type": "object"
+        }
+    }
+}

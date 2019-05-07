@@ -1,0 +1,25 @@
+{
+    "type": "object",
+    "properties": {
+        "Authorization": {
+            "required": true,
+            "type": "string"
+        },
+        "companyId": {
+            "required": true,
+            "type": "string"
+        },
+        "employeeId": {
+            "required": true,
+            "type": "string"
+        },
+        "earningCode": {
+            "required": true,
+            "type": "string"
+        },
+        "startDate": {
+            "required": true,
+            "type": "string"
+        }
+    }
+}
